@@ -169,7 +169,9 @@ public class SwitchManager {
             hide(true);
         }
 
-        if (ad.getTaskId() >= 0) {
+        Intent intent = ad.getIntent();
+        boolean floating = (intent.getFlags() & Intent.FLAG_FLOATING_WINDOW) == Intent.FLAG_FLOATING_WINDOW;
+        if (ad.getTaskId() >= 0 && !floating) {
             // This is an active task; it should just go to the foreground.
             if (customAnim) {
                 final ActivityOptions opts = ActivityOptions.makeCustomAnimation(mContext,
@@ -181,10 +183,14 @@ public class SwitchManager {
             }
             SwitchStatistics.getInstance(mContext).traceStartIntent(ad.getIntent());
         } else {
-            Intent intent = ad.getIntent();
-            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
-                    | Intent.FLAG_ACTIVITY_TASK_ON_HOME
-                    | Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (!floating) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                       | Intent.FLAG_ACTIVITY_TASK_ON_HOME
+                       | Intent.FLAG_ACTIVITY_NEW_TASK);
+            } else {
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                       | Intent.FLAG_FLOATING_WINDOW);
+            }
             if (DEBUG)
                 Log.v(TAG, "Starting activity " + intent);
             try {
@@ -196,6 +202,27 @@ public class SwitchManager {
             } catch (Exception e) {
                 Log.e(TAG, "Something went terrible wrong in switchTask ", e);
             }
+        }
+    }
+
+    public void floatingTask(TaskDescription ad) {
+        if (ad.isKilled()) {
+            return;
+        }
+
+        hide(true);
+
+        Intent intent = ad.getIntent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                    | Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_FLOATING_WINDOW);
+        if (DEBUG)
+                Log.v(TAG, "Starting activity " + intent);
+        try {
+             mContext.startActivity(intent);
+        } catch (SecurityException e) {
+             Log.e(TAG, "Recents does not have the permission to launch "
+                     + intent, e);
         }
     }
 

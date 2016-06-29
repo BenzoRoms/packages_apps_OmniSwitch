@@ -840,9 +840,11 @@ public abstract class AbstractSwitchLayout implements ISwitchLayout {
         }
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             public boolean onMenuItemClick(MenuItem item) {
-                /*if (item.getItemId() == R.id.package_stop_task) {
+                if (item.getItemId() == R.id.recent_float_item) {
+                    mRecentsManager.floatingTask(ad);
+                /*} else if (item.getItemId() == R.id.package_stop_task) {
                     mRecentsManager.killTask(ad);
-                } else*/ if (item.getItemId() == R.id.package_inspect_item) {
+                */} else if (item.getItemId() == R.id.package_inspect_item) {
                     mRecentsManager.startApplicationDetailsActivity(ad
                             .getPackageName());
                 } else if (item.getItemId() == R.id.package_add_favorite) {

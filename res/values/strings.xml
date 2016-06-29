@@ -170,4 +170,5 @@
         <string name="revert_recents_title">Revert recent apps list</string>
         <string name="dialog_overlay_perms_title">OmniSwitch permission error</string>
         <string name="dialog_overlay_perms_msg">Enable \u0022Draw over other apps\u0022 permission</string>
+	<string name="status_bar_recent_float_item_title">Float view</string>
 </resources>
