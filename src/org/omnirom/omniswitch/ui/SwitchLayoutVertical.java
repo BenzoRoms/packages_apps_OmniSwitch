@@ -150,6 +150,7 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
         mRecentList.setVerticalScrollBarEnabled(false);
         final int listMargin = Math.round(2 * mConfiguration.mDensity);
         mRecentList.setDividerHeight(listMargin);
+        mRecentList.setStackFromBottom(mConfiguration.mRevertRecents);
 
         mNoRecentApps = (TextView) mView.findViewById(R.id.no_recent_apps);
 
@@ -392,6 +393,10 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
         if (DEBUG) {
             Log.d(TAG, "updatePrefs");
         }
+        if (mRecentList != null) {
+            mRecentList.setStackFromBottom(mConfiguration.mRevertRecents);
+        }
+
         if (key != null && isPrefKeyForForceUpdate(key)) {
             if (mFavoriteListView != null) {
                 mFavoriteListView.setAdapter(mFavoriteListAdapter);
@@ -400,6 +405,7 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
                 mRecentList.setAdapter(mRecentListAdapter);
             }
         }
+
         if (mFavoriteListView != null) {
             mFavoriteListView.updatePrefs(prefs, key);
         }
@@ -646,5 +652,17 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
     @Override
     protected View getButtonList() {
         return mButtonList;
+    }
+
+    @Override
+    public synchronized void update() {
+        if (mConfiguration.mRevertRecents) {
+            mRecentsManager.revertRecents();
+            if (DEBUG) {
+                Log.d(TAG, "update " + System.currentTimeMillis() + " "
+                        + mRecentsManager.getTasks());
+            }
+        }
+        super.update();
     }
 }
