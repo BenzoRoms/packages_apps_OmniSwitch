@@ -75,6 +75,7 @@ import org.omnirom.omniswitch.ui.AppDrawerView;
 import org.omnirom.omniswitch.ui.FavoriteDialog;
 import org.omnirom.omniswitch.ui.FavoriteViewHorizontal;
 import org.omnirom.omniswitch.ui.FavoriteView;
+import org.omnirom.omniswitch.ui.OverlayTouchListener;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -103,16 +104,7 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
     private SharedPreferences mPrefs;
     private List<String> mFavoriteList;
     private SwitchConfiguration mConfiguration;
-    private Handler mHandler = new Handler();
-    private float[] mInitDownPoint = new float[2];
-    private boolean mFlingEnable;
-    protected boolean mEnabled;
-    private int mSlop;
-    private float mLastX;
     private LauncherClings mWelcomeCling;
-    private boolean mLongPress;
-    private boolean mMoveStarted;
-    private boolean mWrongMoveStarted;
     private ImageView mAppDrawerButton;
     private View mRootBottomView;
     private ImageView mFavoriteButton;
@@ -128,6 +120,7 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
     private ImageView mEssentialsButton;
     private boolean mEssentialsPanelVisibile;
     private ImageView mCameraButton;
+    private OverlayTouchListener mTouchListener;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -135,55 +128,6 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
             final String action = intent.getAction();
             if (Intent.ACTION_WALLPAPER_CHANGED.equals(action)) {
             }
-        }
-    };
-
-    private Runnable mLongPressRunnable = new Runnable(){
-    @Override
-    public void run() {
-        if (DEBUG){
-            Log.d(TAG, "mLongPressRunnable");
-        }
-        if (getRecentsManager() != null) {
-            getRecentsManager().hideHidden();
-        }
-        mLongPress = true;
-    }};
-
-    private GestureDetector mGestureDetector;
-    private GestureDetector.OnGestureListener mGestureListener = new GestureDetector.OnGestureListener() {
-        @Override
-        public boolean onSingleTapUp(MotionEvent e) {
-            return false;
-        }
-        @Override
-        public void onShowPress(MotionEvent e) {
-        }
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            return false;
-        }
-        @Override
-        public void onLongPress(MotionEvent e) {
-        }
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            float distanceX = Math.abs(mInitDownPoint[0] - e2.getRawX());
-            if (distanceX > mSlop) {
-                if (DEBUG) {
-                    Log.d(TAG, "onFling open " + velocityX);
-                }
-                mEnabled = false;
-                mHandler.removeCallbacks(mLongPressRunnable);
-                if (getRecentsManager() != null) {
-                    getRecentsManager().openSlideLayout(true);
-                }
-            }
-            return false;
-        }
-        @Override
-        public boolean onDown(MotionEvent e) {
-            return true;
         }
     };
 
@@ -214,11 +158,8 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
         super.onCreate(savedInstanceState);
         mFavoriteList = new ArrayList<String>();
         mConfiguration = SwitchConfiguration.getInstance(this);
-        ViewConfiguration vc = ViewConfiguration.get(this);
-        mSlop = vc.getScaledTouchSlop() / 2;
-        mGestureDetector = new GestureDetector(this, mGestureListener);
-        mGestureDetector.setIsLongpressEnabled(false);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mTouchListener = new OverlayTouchListener(this);
 
         mEssentialsPanelVisibile = isEssentialsExpanded();
         final int activePanel = getActivePanel();
@@ -237,6 +178,8 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
             getWindow().setDimAmount(DIM_AMOUNT);
             mWelcomeCling = new LauncherClings(this);
             mWelcomeCling.showWelcomeCling();
+        } else {
+            mTouchListener.setSwipeActive();
         }
     }
 
@@ -358,122 +301,7 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
             phoneSpace.setVisibility(View.VISIBLE);
         }
 
-        mRootView.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                int action = event.getAction();
-                float xRaw = event.getRawX();
-                float yRaw = event.getRawY();
-                float distanceX = mInitDownPoint[0] - xRaw;
-
-                if (isShowingIntroScreen()) {
-                    return true;
-                }
-                if (getRecentsManager() == null) {
-                    return true;
-                }
-                if(DEBUG){
-                    Log.d(TAG, "mRootView onTouch " + action + ":" + (int)xRaw + ":" + (int)yRaw + " mFlingEnable=" + mFlingEnable +
-                            " mEnabled=" + mEnabled +  " mMoveStarted=" + mMoveStarted + " mLongPress=" + mLongPress +
-                            " mWrongMoveStarted=" + mWrongMoveStarted);
-                }
-                if (mFlingEnable) {
-                    mGestureDetector.onTouchEvent(event);
-                }
-                switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    v.setPressed(true);
-                    mFlingEnable = false;
-                    mEnabled = true;
-                    mLongPress = false;
-                    mMoveStarted = false;
-                    mWrongMoveStarted = false;
-
-                    if (getRecentsManager() != null) {
-                        getRecentsManager().clearTasks();
-                        RecentTasksLoader.getInstance(Launcher.this).cancelLoadingTasks();
-                        RecentTasksLoader.getInstance(Launcher.this).setSwitchManager(getRecentsManager());
-                        RecentTasksLoader.getInstance(Launcher.this).preloadTasks();
-                    }
-
-                    mInitDownPoint[0] = xRaw;
-                    mInitDownPoint[1] = yRaw;
-                    mLastX = xRaw;
-                    mHandler.postDelayed(mLongPressRunnable, ViewConfiguration.getLongPressTimeout());
-                    break;
-                case MotionEvent.ACTION_CANCEL:
-                    v.setPressed(false);
-                    mHandler.removeCallbacks(mLongPressRunnable);
-                    mFlingEnable = false;
-                    mEnabled = true;
-                    mLongPress = false;
-                    mMoveStarted = false;
-                    mWrongMoveStarted = false;
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if (!mEnabled){
-                        return true;
-                    }
-                    v.setPressed(false);
-                    mFlingEnable = false;
-                    if (Math.abs(distanceX) > mSlop) {
-                        mHandler.removeCallbacks(mLongPressRunnable);
-                        if (mLastX > xRaw) {
-                            // move left
-                            if (mConfiguration.mLocation == 0 && !mWrongMoveStarted) {
-                                mFlingEnable = true;
-                                mMoveStarted = true;
-                                if (getRecentsManager() != null) {
-                                    getRecentsManager().showHidden();
-                                }
-                            } else {
-                                mWrongMoveStarted = true;
-                            }
-                        } else {
-                            // move right
-                            if (mConfiguration.mLocation != 0 && !mWrongMoveStarted) {
-                                mFlingEnable = true;
-                                mMoveStarted = true;
-                                if (getRecentsManager() != null) {
-                                    getRecentsManager().showHidden();
-                                }
-                            } else {
-                                mWrongMoveStarted = true;
-                            }
-                        }
-                        if (mMoveStarted) {
-                            if (getRecentsManager() != null) {
-                                getRecentsManager().slideLayout(distanceX);
-                            }
-                        }
-                    }
-                    mLastX = xRaw;
-                    break;
-                case MotionEvent.ACTION_UP:
-                    v.setPressed(false);
-                    mFlingEnable = false;
-                    mHandler.removeCallbacks(mLongPressRunnable);
-
-                    if (mEnabled && !mLongPress) {
-                        if (mMoveStarted) {
-                            if (getRecentsManager() != null) {
-                                getRecentsManager().finishSlideLayout();
-                            }
-                            } else {
-                            if (getRecentsManager() != null) {
-                                getRecentsManager().hideHidden();
-                            }
-                        }
-                    }
-                    mEnabled = true;
-                    mMoveStarted = false;
-                    mWrongMoveStarted = false;
-                    break;
-                }
-                return true;
-            }
-        });
+        mRootView.setOnTouchListener(mTouchListener);
 
         mAppDrawer = (AppDrawerView) findViewById(R.id.app_drawer);
         mAppDrawer.setTransparentMode(true);
@@ -774,6 +602,7 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
     public void dismissIntroScreen() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         mPrefs.edit().putBoolean(WECLOME_SCREEN_DISMISSED, true).commit();
+        mTouchListener.setSwipeActive();
     }
 
     private boolean isShowingIntroScreen() {
@@ -818,7 +647,7 @@ public class Launcher extends Activity implements IEditFavoriteActivity {
     public void applyChanges(List<String> favoriteList){
         mPrefs.edit().putString(SettingsActivity.PREF_FAVORITE_APPS, Utils.flattenFavorites(favoriteList)).commit();
     }
-    
+
 
     private void hideOverlays() {
         hideAppDrawerPanel(true, true);
