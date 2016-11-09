@@ -245,7 +245,7 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
 
         mButtonList = (ScrollView) mView
                 .findViewById(R.id.button_list_top);
-        mButtonList.setHorizontalScrollBarEnabled(false);
+        mButtonList.setVerticalScrollBarEnabled(false);
         mButtonListItems = (LinearLayout) mView
                 .findViewById(R.id.button_list_items_top);
 
