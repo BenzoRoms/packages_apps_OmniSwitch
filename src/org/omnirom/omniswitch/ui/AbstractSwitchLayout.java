@@ -269,13 +269,13 @@ public abstract class AbstractSwitchLayout implements ISwitchLayout {
                     && event.getRepeatCount() == 0) {
                 if (mShowing) {
                     if (DEBUG) {
-                        Log.d(TAG, "onKey");
+                        Log.d(TAG, "onKey KEYCODE_BACK");
                     }
                     hide(false);
-                    return true;
                 }
             }
-            return false;
+            // we swallow all keys
+            return true;
         }
     }
 
