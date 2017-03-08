@@ -264,7 +264,7 @@ public abstract class AbstractSwitchLayout implements ISwitchLayout {
             if (!mEnabled) {
                 return false;
             }
-            if (keyCode == KeyEvent.KEYCODE_BACK
+            if ((keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_APP_SWITCH)
                     && event.getAction() == KeyEvent.ACTION_DOWN
                     && event.getRepeatCount() == 0) {
                 if (mShowing) {
