@@ -78,7 +78,8 @@ public class BitmapUtils {
                 Paint.FILTER_BITMAP_FLAG));
 
         if (image instanceof BitmapDrawable) {
-            Bitmap b = ((BitmapDrawable) image).getBitmap();
+            Drawable d = image.mutate();
+            Bitmap b = ((BitmapDrawable) d).getBitmap();
             Bitmap bmResult = Bitmap.createBitmap(size, size,
                     Bitmap.Config.ARGB_8888);
             canvas.setBitmap(bmResult);
@@ -95,20 +96,6 @@ public class BitmapUtils {
             return new BitmapDrawable(resources, bmResult);
         }
         return image;
-    }
-
-    public static Drawable resizeBitmap(Resources resources, Bitmap image,
-            int width, int height) {
-        final Canvas canvas = new Canvas();
-        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
-                Paint.FILTER_BITMAP_FLAG));
-
-        Bitmap bmResult = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bmResult);
-        Bitmap bitmapResized = Bitmap.createScaledBitmap(image, width, height, true);
-        canvas.drawBitmap(bitmapResized, 0, 0, null);
-        return new BitmapDrawable(resources, bmResult);
     }
 
     public static Drawable colorize(Resources resources, int color,
