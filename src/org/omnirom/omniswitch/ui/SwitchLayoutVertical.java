@@ -312,7 +312,7 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
         mAppDrawer.setVisibility(View.GONE);
         mView.setTranslationX(0);
         mVirtualBackKey = false;
-        mShowThumbs = false;
+        mShowThumbs = mConfiguration.mLoadThumbOnSwipe;
         enableOpenFavoriteButton(true);
         mOpenFavorite.setRotation(getExpandRotation());
         if (Utils.isLockToAppEnabled(mContext)) {
@@ -622,8 +622,10 @@ public class SwitchLayoutVertical extends AbstractSwitchLayout {
 
     @Override
     protected void afterShowDone() {
-        mShowThumbs = true;
-        mRecentListAdapter.notifyDataSetChanged();
+        if (!mConfiguration.mLoadThumbOnSwipe) {
+            mShowThumbs = true;
+            mRecentListAdapter.notifyDataSetChanged();
+        }
     }
 
     private void createMemoryDisplay() {
